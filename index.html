@@ -18,6 +18,9 @@
 @media print{@page{size:A4;margin:15mm}body{background:white;color:#182e23;font-size:10pt}.shell,.sidebar,.toast,dialog,.skip-link,.sprite{display:none!important}.print-content{display:block!important}.print-cover{margin-bottom:25px;border-bottom:2px solid #36594a;padding-bottom:20px}.print-cover h1{font-family:var(--serif);font-size:28pt;margin:0 0 15px}.print-cover p{font-size:10pt;margin-bottom:7px}.print-day{page-break-before:always}.print-day h2{font-size:20pt;font-family:var(--serif);line-height:1.5}.print-day .prose{font-size:9pt;line-height:1.7;color:#1c3526}.print-day .prose h3{font-size:12pt}.print-day table{font-size:8pt;min-width:0}.print-day .table-scroll{overflow:visible;border-radius:0}.print-day .prose th,.print-day .prose td{padding:7px}.print-day tr{break-inside:avoid}.print-day a{color:inherit;text-decoration:none}.print-day .prose blockquote{break-inside:avoid}.print-note{border:1px dashed #a2b69b;padding:12px;font-size:9pt;white-space:pre-wrap}.print-check{margin:8px 0;display:flex;gap:8px;align-items:flex-start}.print-check p{display:inline;margin:0}.print-check .prose{font-size:9pt}.print-day h3{break-after:avoid}.prose pre{white-space:pre-wrap}.print-source-note{font-size:8pt;color:#6a7965}.print-dim{font-size:10pt;color:#69775f}.print-content *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 
 .day-columns>div,.day-columns>aside,.overview-grid>section,.overview-grid>aside,.transport-top>*,.hotel-card,.timeline-card,.source-document{min-width:0}
+a.place-link,.prose a.place-link{color:inherit;text-decoration:underline;text-decoration-style:dotted;text-decoration-color:currentColor;text-underline-offset:3px;cursor:pointer}a.place-link:hover,.prose a.place-link:hover{text-decoration-style:solid;text-decoration-thickness:2px}.maps-hint{font-size:11px;color:var(--muted);margin:-12px 0 22px;display:flex;align-items:center;gap:6px}.maps-hint .ico{width:14px;height:14px}
+.booking-panel{padding:20px 22px}.booking-panel h3{margin-bottom:7px}.booking-intro,.booking-footnote{font-size:11px;line-height:1.8;color:var(--muted);margin:0}.booking-list{margin-top:12px}.booking-row{display:flex;align-items:center;justify-content:space-between;gap:15px;border-top:1px solid var(--line);padding:13px 0}.booking-row:last-child{padding-bottom:0}.booking-copy{min-width:0;flex:1}.booking-copy h4{font-size:12px;margin:0 0 4px;line-height:1.6}.booking-copy p{font-size:11px;color:var(--muted);line-height:1.7;margin:0}.booking-row .booking-link{flex:none;white-space:nowrap;min-height:44px}.booking-footnote{margin-top:14px}.booking-directory>.booking-panel{border:0;border-radius:0;margin:0;box-shadow:none}.booking-link .ico{width:14px;height:14px}
+@media(max-width:480px){.booking-panel{padding:18px}.booking-row{align-items:flex-start;flex-direction:column;gap:9px}.booking-row .booking-link{align-self:flex-start}.booking-copy p{font-size:12px}}
 </style>
 </head>
 <body>
@@ -89,6 +92,193 @@ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const icon=(name,cl='')=>`<svg class="ico ${cl}" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const btn=(text,action,style='btn-outline',ic='')=>`<button class="btn ${style}" data-action="${action}">${ic?icon(ic):''}<span>${text}</span></button>`;
 const mapUrl=q=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);
+// Explicit aliases avoid turning generic labels (e.g. "酒店" or "巴士站") into the wrong place.
+// Keep these links as normal HTTPS anchors: Maps handles the app/browser fallback.
+const mapPlaces=[
+ ['成田空港 第2ターミナル 日本',['成田机场 T2','成田机场T2','成田 T2','成田T2']],
+ ['成田国際空港 日本',['成田机场','成田空港']],
+ ['空港第2ビル駅 千葉県 日本',['空港第2ビル站','空港第2ビル駅','空港第2ビル']],
+ ['羽田空港 第3ターミナル 日本',['羽田机场 T3','羽田机场T3','羽田 T3','羽田T3','羽田空港第3ターミナル']],
+ ['東京国際空港 羽田 日本',['羽田机场']],
+ ['鎌倉駅 神奈川県 日本',['镰仓站','鎌倉駅']],
+ ['鎌倉高校前駅 神奈川県 日本',['镰仓高校前站','镰仓高校前','高校前站','鎌倉高校前駅']],
+ ['江の島 藤沢市 神奈川県 日本',['江之岛','江の島']],
+ ['江ノ島駅 藤沢市 日本',['江之岛站','江ノ島駅']],
+ ['長谷駅 鎌倉市 日本',['长谷站','長谷駅']],
+ ['長谷寺 鎌倉市 神奈川県 日本',['长谷寺','長谷寺']],
+ ['高徳院 鎌倉市 神奈川県 日本',['镰仓大佛','鎌倉大仏','高德院','高徳院']],
+ ['由比ヶ浜海岸 鎌倉市 日本',['由比滨海岸','由比滨','由比ヶ浜海岸']],
+ ['鶴岡八幡宮 鎌倉市 日本',['鹤冈八幡宫','鶴岡八幡宮','八幡宫']],
+ ['小町通り 鎌倉市 日本',['小町通','小町通り']],
+ ['段葛 鎌倉市 日本',['段葛']],
+ ['大船駅 神奈川県 日本',['大船站','大船駅']],
+ ['小田原駅 神奈川県 日本',['小田原站','小田原駅']],
+ ['箱根湯本駅 神奈川県 日本',['箱根汤本站','箱根湯本駅']],
+ ['箱根町 湯本 神奈川県 日本',['箱根汤本','箱根湯本']],
+ ['彫刻の森美術館 箱根町 日本',['雕刻之森美术馆','雕刻之森','彫刻の森美術館']],
+ ['彫刻の森駅 箱根町 日本',['雕刻之森站','彫刻の森駅']],
+ ['強羅駅 箱根町 日本',['强罗站','強羅駅']],
+ ['早雲山駅 箱根町 日本',['早云山站','早雲山駅']],
+ ['大涌谷 箱根町 日本',['大涌谷']],
+ ['桃源台港 箱根町 日本',['桃源台港','桃源台']],
+ ['元箱根港 箱根町 日本',['元箱根港']],
+ ['箱根神社 神奈川県 日本',['箱根神社']],
+ ['芦ノ湖 箱根町 日本',['芦之湖','芦ノ湖']],
+ ['伊豆高原駅 伊東市 静岡県 日本',['伊豆高原站','伊豆高原駅']],
+ ['城ヶ崎海岸 伊東市 静岡県 日本',['城崎海岸','城ヶ崎海岸']],
+ ['城ヶ崎海岸駅 伊東市 日本',['城崎海岸站','城ヶ崎海岸駅']],
+ ['伊豆海洋公園 伊東市 日本',['伊豆海洋公园','伊豆海洋公園','海洋公园']],
+ ['門脇つり橋 伊東市 日本',['门胁吊桥','門脇つり橋']],
+ ['門脇埼灯台 伊東市 日本',['门胁灯塔','門脇埼灯台']],
+ ['伊豆熱川駅 東伊豆町 静岡県 日本',['伊豆热川站','热川站','伊豆熱川駅']],
+ ['伊豆高原 伊東市 静岡県 日本',['伊豆高原']],
+ ['熱川温泉 東伊豆町 静岡県 日本',['伊豆热川','热川温泉']],
+ ['大室山 伊東市 静岡県 日本',['大室山']],
+ ['シャボテン公園 バス停 伊東市 日本',['シャボテン公園']],
+ ['伊豆シャボテン動物公園 伊東市 日本',['伊豆仙人掌动物公园','伊豆シャボテン動物公園','动物公园']],
+ ['河津駅 静岡県 日本',['河津站','河津駅']],
+ ['河津七滝 河津町 静岡県 日本',['河津七滝','七滝步道']],
+ ['河津七滝遊歩道上入口 バス停 河津町 静岡県 日本',['河津七滝遊歩道上入口','七滝上入口']],
+ ['河津七滝 バス停 河津町 静岡県 日本',['七滝回程站']],
+ ['黒根岩風呂 東伊豆町 静岡県 日本',['黒根岩風呂','黒根岩','黑根岩风吕','黑根岩']],
+ ['北川温泉 東伊豆町 静岡県 日本',['北川温泉']],
+ ['伊豆北川駅 東伊豆町 静岡県 日本',['伊豆北川站','伊豆北川','伊豆北川駅']],
+ ['伊豆稲取駅 東伊豆町 静岡県 日本',['伊豆稻取站','伊豆稻取','伊豆稲取駅']],
+ ['文化公園 雛の館 東伊豆町 静岡県 日本',['稻取雛之馆','文化公园「雛の館」','文化公园雛の館','雛の館']],
+ ['來宮神社 熱海市 静岡県 日本',['来宫神社','來宮神社']],
+ ['熱海駅 静岡県 日本',['热海站','熱海駅']],
+ ['熱海市 静岡県 日本',['热海']],
+ ['熱川YOU湯ビーチ 東伊豆町 日本',['热川海边','熱川YOU湯ビーチ']],
+ ['品川駅 東京都 日本',['品川站','品川駅']],
+ ['浜松町駅 北口 東京都 日本',['滨松町北口','浜松町駅 北口']],
+ ['浜松町駅 東京都 日本',['滨松町站','浜松町駅']],
+ ['モノレール浜松町駅 東京都 日本',['单轨电车滨松町站','モノレール浜松町駅']],
+ ['大門駅 A2出口 東京都 日本',['大门 A2','大門駅 A2出口']],
+ ['大門駅 A1出口 東京都 日本',['大门 A1','大門駅 A1出口']],
+ ['大門駅 東京都 日本',['大门站','大門駅']],
+ ['新宿駅 東京都 日本',['新宿站','新宿駅']],
+ ['新宿御苑 東京都 日本',['新宿御苑']],
+ ['東京都庁 第一本庁舎 展望室 日本',['东京都厅展望室','都厅展望室']],
+ ['東京タワー 東京都 日本',['东京塔','東京タワー']],
+ ['芝公園 東京都 日本',['芝公园','芝公園']],
+ ['増上寺 東京都 日本',['增上寺','増上寺']],
+ ['渋谷駅 東京都 日本',['涩谷站','渋谷駅']],
+ ['渋谷 東京都 日本',['涩谷','渋谷']],
+ ['SHIBUYA SKY 東京都 日本',['SHIBUYA SKY','Shibuya Sky']],
+ ['渋谷スクランブル交差点 東京都 日本',['涩谷十字路口']],
+ ['忠犬ハチ公像 渋谷 東京都 日本',['八公像','八公']],
+ ['二子玉川駅 東京都 日本',['二子玉川站','二子玉川駅']],
+ ['二子玉川 東京都 日本',['二子玉川']],
+ ['二子玉川緑地運動場 東京都 日本',['二子玉川緑地運動場']],
+ ['用賀駅 東京都 日本',['用贺站','用賀站','用賀駅']],
+ ['皇居 東京都 日本',['皇居']],
+ ['皇居東御苑 東京都 日本',['皇居东御苑','皇居東御苑','东御苑']],
+ ['大手門 皇居 東京都 日本',['大手门','大手門']],
+ ['浅草 台東区 東京都 日本',['浅草']],
+ ['浅草駅 東京都 日本',['浅草站','浅草駅']],
+ ['浅草寺 東京都 日本',['浅草寺']],
+ ['雷門 浅草寺 東京都 日本',['雷门','雷門']],
+ ['仲見世商店街 浅草 東京都 日本',['仲见世','仲見世']],
+ ['隅田川 東京都 日本',['隅田川']],
+ ['東京スカイツリー 東京都 日本',['东京晴空塔','晴空塔','東京スカイツリー']],
+ ['東京ソラマチ 東京都 日本',['Solamachi','ソラマチ']],
+ ['銀座 東京都 日本',['银座','銀座']],
+ ...D.hotels.map(h=>[h.jp+' '+h.address+' 日本',[h.name,h.official,h.jp]])
+];
+const hotelAliases={hakone:['天成园','天成園'],izu:['伊东园热川','伊东园酒店热川'],tokyo:['名铁滨松町','名铁酒店','名鉄イン浜松町']};
+for(const h of D.hotels)if(hotelAliases[h.id])mapPlaces.push([h.jp+' '+h.address+' 日本',hotelAliases[h.id]]);
+// Short names denote stations in route summaries, but can denote districts in prose.
+const routeMapPlaces=[
+ ['鎌倉駅 神奈川県 日本',['镰仓']],['大船駅 神奈川県 日本',['大船']],
+ ['小田原駅 神奈川県 日本',['小田原']],['箱根湯本駅 神奈川県 日本',['箱根汤本','汤本']],
+ ['強羅駅 箱根町 日本',['强罗']],['早雲山駅 箱根町 日本',['早云山']],
+ ['伊豆高原駅 静岡県 日本',['伊豆高原']],['伊豆熱川駅 静岡県 日本',['伊豆热川','热川']],
+ ['品川駅 東京都 日本',['品川']],['新宿駅 東京都 日本',['新宿']],
+ ['浜松町駅 東京都 日本',['滨松町']],['大門駅 東京都 日本',['大门']]
+];
+function placeMatcher(places){
+ const queries=new Map();for(const [query,aliases]of places)for(const alias of aliases)queries.set(alias,query);
+ const pattern=[...queries.keys()].sort((a,b)=>b.length-a.length).map(s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+ return {queries,pattern:new RegExp(pattern,'g')};
+}
+const prosePlaces=placeMatcher(mapPlaces),routePlaces=placeMatcher([...mapPlaces,...routeMapPlaces]);
+function placeQuery(name,node){
+ const route=node.parentElement.closest('.route-box,.memo-card h4');
+ if(name==='河津七滝'&&/回程查询\s*「河津七滝」/.test(node.parentElement.closest('p,li')?.textContent||''))return prosePlaces.queries.get('七滝回程站');
+ return (route?routePlaces:prosePlaces).queries.get(name);
+}
+function linkPlaces(root){
+ const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(node){
+  return node.parentElement.closest('a,button,label,input,textarea,select,script,style,svg,pre,code,[contenteditable],.notes-panel,.provenance,.source-notice')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;
+ }});
+ const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+ for(const node of nodes){
+  const {pattern}=node.parentElement.closest('.route-box,.memo-card h4')?routePlaces:prosePlaces;
+  const text=node.nodeValue,fragment=document.createDocumentFragment();let end=0;
+  pattern.lastIndex=0;
+  for(const match of text.matchAll(pattern)){
+   const name=match[0],start=match.index;
+   // This branch stores luggage at the hotel, not at Atagawa Station.
+   if(name==='热川'&&/^(寄存|取行李)/.test(text.slice(start+name.length)))continue;
+   if((/^[A-Za-z0-9]/.test(name)&&/[A-Za-z0-9]/.test(text[start-1]||''))||(/[A-Za-z0-9]$/.test(name)&&/[A-Za-z0-9]/.test(text[start+name.length]||'')))continue;
+   fragment.append(text.slice(end,start));
+   const link=document.createElement('a');link.className='place-link';link.href=mapUrl(placeQuery(name,node));link.target='_blank';link.rel='noopener noreferrer';link.textContent=name;
+   link.title='在 Google Maps 中打开：'+name;link.setAttribute('aria-label',link.title);fragment.append(link);end=start+name.length;
+  }
+  if(end){fragment.append(text.slice(end));node.replaceWith(fragment);}
+ }
+}
+// Official booking entry pages, checked 2026-09-20. No dates, quantities or payment are submitted here.
+const bookingLinks={
+ 'enoden':{title:'江之电一日券',label:'手机购票 · EMot',url:'https://www.emot-tickets.jp/detail-purchase?language=ja&masterBookId=136&set=true&site=',source:D.refs['enoden-pass'],note:'EMot 需用手机购买与使用，电脑可扫码；与当天单程票总价比较后再买。'},
+ 'hakone-pass':{title:'箱根周游券',label:'手机购票 · EMot',url:'https://www.emot-tickets.jp/detail-purchase?language=ja&masterBookId=1&set=true&site=hakone',source:D.refs['hakone-pass'],note:'本行程选小田原出发、9/27 起用的三日券。EMot 需用手机购买与使用，电脑可扫码。'},
+ 'tokai-pass':{title:'东海巴士伊东・伊豆高原两日券',label:'手机购票 · EMot',url:'https://www.emot-tickets.jp/detail-purchase?language=ja&masterBookId=354&set=true&site=',source:D.refs['tokai-pass'],note:'按两天实际巴士行程比较是否合算，热川往返铁路不包含。EMot 需用手机购买与使用，电脑可扫码。'},
+ 'jr-seats':{title:'JR 踊り子指定席',label:'JR 官方订票',url:'https://www.eki-net.com/en/jreast-train-reservation/Top/Index',note:'按实际日期和上下车站查询，核对乘车券与特急券；不要仅购买特急附加票后漏算基础车资。'},
+ 'enoshima':{title:'江之岛灯塔／岩屋票券',label:'官方票种与购票',url:'https://enoshima-seacandle.com/tickets/',note:'官网有灯塔套票及含岩屋的联票。原行程登塔与岩屋二选一，按实际选择买票。'},
+ 'hasedera':{title:'长谷寺',label:'参拜信息',url:D.refs.hasedera,note:'查看普通参拜的开放时间与门票信息；此入口为参拜说明。'},
+ 'daibutsu':{title:'镰仓大佛・高德院',label:'参拜信息',url:'https://kotoku-in.jp/',note:'普通参拜无需预约；查看开放时间、参拜费与胎内参观说明。'},
+ 'museum':{title:'箱根雕刻之森美术馆',label:'美术馆购票',url:'https://www.hakone-oam.or.jp/webticket/',note:'从官网购买网络门票，按抵达与酒店晚餐安排确定参观时间。'},
+ 'hasegawa':{title:'鳗鱼长谷川元箱根本店',label:'官网／预约咨询',url:D.refs['hakone-eel'],note:'候选午餐；通过官网所列联系方式询问订座，满位时改为附近用餐。'},
+ 'omuro':{title:'大室山缆车',label:'现场购票说明',url:D.refs.omuro,note:'缆车票仅在现场窗口购买；出发前查看运行公告与营业时间。'},
+ 'shaboten':{title:'伊豆仙人掌动物公园',label:'购买电子票',url:'https://www.asoview.com/channel/ticket/KN44CMLRkR/ticket0000050575/',source:'https://izushaboten.com/',note:'进入官网指定的 Asoview 售票页，按参观日期选票；额外体验看各自说明。'},
+ 'kurone':{title:'黒根岩風呂',label:'入浴信息',url:D.refs.kurone,note:'查看温泉协会公布的开放时间、费用与入浴规定。'},
+ 'gyoen':{title:'新宿御苑',label:'购买电子票',url:'https://www.asoview.com/channel/ticket/zBJRdYGezf/ticket0000043167/',source:'https://fng.or.jp/shinjuku/en/',note:'官网指定的 Asoview 电子票入口；仍需在当天停止入园前抵达。'},
+ 'hina':{title:'稻取文化公园「雛の館」',label:'入馆信息',url:D.refs.hina,note:'稻取替换方案使用；查看秋季展示日历、休馆日与入馆费用。'},
+ 'tokyo-tower':{title:'东京塔展望台（可选）',label:'展望台购票',url:'https://ticket.tokyotower.co.jp/en/',note:'原行程只看外观，无需登塔票；若决定登塔，再按剩余时间选择票种。'},
+ 'fireworks':{title:'世田谷区多摩川花火・付费席',label:'官方售票入口',url:D.refs['fireworks-seat'],note:'选择世田谷・鎌田会场；从官网进入乐天售票，确认座位、取票与退改规定。'},
+ 'shibuya-sky':{title:'SHIBUYA SKY',label:'官方预约购票',url:'https://shibuya-scramble-square.com/sky/ticket/',note:'选择到访日期与入场时段；屋顶开放与退改按官方规定。'},
+ 'skytree':{title:'东京晴空塔展望台（可选）',label:'官方预约购票',url:'https://www.tokyo-skytree.jp/ticket/',note:'只有决定登塔时才需买展望台票；按日期、时段与展望层选择。'}
+};
+const hotelBookingLinks={
+ kamakura:{url:'https://plat-hostel-keikyu.com/hostel/kamakura-wave/'},
+ hakone:{url:'https://www.tenseien.co.jp/'},
+ izu:{url:'https://www.itoenhotel.com/atagawa/'},
+ tokyo:{url:'https://www.m-inn.com/hamamatsucho/'}
+};
+const transportBookingIds=['enoden','hakone-pass','tokai-pass','jr-seats'];
+function bookingButton(item,label){return `<a class="btn btn-outline booking-link" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(item.title+'：'+(label||item.label))}">${icon('external')}<span>${esc(label||item.label)}</span></a>`;}
+function hotelBookingButton(h){const item=hotelBookingLinks[h.id];return item?bookingButton({...item,title:h.name},'官网预订'):'';}
+function bookingPanel(entries,title='预约与购票',intro='按当天安排选择票券，点击前往官方入口。'){
+ const items=entries.map(entry=>{const id=typeof entry==='string'?entry:entry.id;const item=bookingLinks[id];return item?{...item,id,...(typeof entry==='string'?{}:entry)}:null;}).filter(Boolean);
+ if(!items.length)return '';
+ return `<section class="panel booking-panel"><h3>${icon('ticket')}${esc(title)}</h3><p class="booking-intro">${esc(intro)}</p><div class="booking-list">${items.map(item=>`<article class="booking-row" data-booking-id="${esc(item.id)}"><div class="booking-copy"><h4>${esc(item.title)}</h4><p>${esc(item.note)}${item.source?` <a href="${esc(item.source)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(item.title+'：官网说明')}">官网说明 ↗</a>`:''}</p></div>${bookingButton(item)}</article>`).join('')}</div><p class="booking-footnote">票价、可选日期与余票以购票页面为准；跳转需要联网。</p></section>`;
+}
+function dayBookingEntries(d){
+ const byDay={
+  '2':['enoden','enoshima','hasedera','daibutsu'],
+  '3':['hakone-pass','museum'],
+  '4':['hakone-pass','hasegawa'],
+  '5':['jr-seats','tokai-pass'],
+  '6':['tokai-pass','omuro','shaboten'],
+  '9A':['fireworks',{id:'shibuya-sky',note:'可选上午场，替换部分购物；下午留给花火入场与等候。'}],
+  '9B':['shibuya-sky'],
+  '10B':['skytree']
+ };
+ if(d.key==='7')return state.choices['7']===0?[]:['kurone'];
+ if(d.key==='8')return ['jr-seats',state.choices['8']===0?'gyoen':'hina','tokyo-tower'];
+ return byDay[d.key]||[];
+}
+function bookingDirectory(){return `<details class="details-box booking-directory"><summary>官方预约与购票入口${icon('chevron')}</summary>${bookingPanel(Object.keys(bookingLinks),'全部入口','这里汇总行程里的购票、预约咨询与现场购票说明；按所选方案使用。')}</details>`;}
 const hotel=id=>D.hotels.find(h=>h.id===id);
 const checkedCount=()=>D.checks.filter(c=>state.checks[c.id]).length;
 const allDays=()=>Array.from({length:11},(_,i)=>getDay(i+1));
@@ -116,17 +306,23 @@ function overview(){
  return `<div class="page-head"><div><div class="eyebrow">YOUR AUTUMN, WELL PLANNED.</div><h1>${U.headline}</h1><p>${U.overviewSubtitle}</p></div><span class="tag">${icon('globe')}${U.allLocal}</span></div><section class="hero"><div class="hero-copy"><div class="eyebrow">AUTUMN JOURNEY &nbsp; / &nbsp; 2026.09.25 - 10.05</div><h1>${U.heroTitle}</h1><p>${U.heroSub}</p><div class="hero-actions"><button class="btn btn-light" data-day="1">${U.startExploring}${icon('arrow')}</button><button class="btn btn-ghost" data-view="checklist">${U.seeChecklist}</button></div></div>${heroArt()}<span class="hero-bottom">11 DAYS &nbsp; / &nbsp; 10 NIGHTS &nbsp; / &nbsp; 4 STAYS</span></section><div class="trip-meta"><span class="tag">${icon('calendar')}11 &#22825; 10 &#26202;</span><span class="tag">${icon('train')}&#20844;&#20849;&#20132;&#36890;&#20026;&#20027;</span><span class="tag">${icon('bed')}&#28392;&#26494;&#30010;&#21517;&#38081;&#37202;&#24215;&#29256;</span><span class="tag tag-peach">${icon('plane')}NRT IN / HND OUT</span></div><section class="regions" aria-label="${U.routeLabel}">${D.regions.map(r=>`<button class="region-card" data-day="${r.day}"><span class="region-icon">${icon(r.icon)}</span><span><span class="region-name">${r.zh}<small>${r.nights}</small></span><span class="region-dates">${r.dates}</span></span><span class="region-desc"><span>${r.desc}</span><span>${r.en}</span></span></button>`).join('')}</section>${planToggle(true)}<div class="overview-grid"><section><div class="section-top"><div><h2>${U.dayList}</h2><p>${U.dayListSub}</p></div><button class="icon-btn" data-action="today" aria-label="${U.gotoToday}" title="${U.gotoToday}">${icon('calendar')}</button></div>${allDays().map(d=>{const change=d.variants?D.specialChoices[d.key].labels[state.choices[d.key]]:'';return `<button class="day-row ${state.done[d.num]?'done':''}" data-day="${d.num}" data-region="${regionId(d)}"><span class="day-row-date">${d.date}<small>${d.week}</small></span><span class="day-row-line"></span><span class="day-row-content"><span class="day-row-title">${d.title}</span><span class="day-row-desc" style="display:block">${change?`${U.selected} ${change} &middot; ${activeRoute(d)}`:d.desc}</span></span><span class="day-row-badge">${d.region}</span>${icon(state.done[d.num]?'check':'chevron')}</button>`}).join('')}</section><aside class="overview-aside">${flightCard()}<section class="panel"><h3>${icon('clock')}${U.important}</h3>${D.important.map(it=>`<div class="alert-item"><span class="alert-date">${it.date}</span><div><button class="alert-title" data-day="${it.day}" style="padding:0;text-align:left">${it.title}</button><div class="alert-text">${it.text}</div></div></div>`).join('')}</section><section class="panel"><h3>${icon('checklist')}${U.prepare}</h3><div class="prep-number"><span data-check-count>${checkedCount()}</span><small>/ ${D.checks.length}</small></div><div class="progress-track"><div data-check-progress class="progress-fill" style="width:${checkedCount()/D.checks.length*100}%"></div></div><button class="btn btn-outline" data-view="checklist" style="width:100%">${U.checkAll}${icon('arrow')}</button><p class="small-note">${U.localOnly}</p></section></aside></div><div class="source-notice">${U.sourceNotice}</div>`;
 }
 function datesMarkup(){return `<div class="date-strip" aria-label="${U.dateLabel}">${allDays().map(d=>`<button class="date-btn ${state.day===d.num?'active':''}" data-day="${d.num}" aria-pressed="${state.day===d.num}">${d.date}<small>${d.region} &middot; ${d.week}</small>${state.done[d.num]?'<span class="day-dot"></span>':''}</button>`).join('')}</div>`;}
-function termsMarkup(d){return `<section class="panel"><h3>${icon('pin')}&#26085;&#25991;&#26816;&#32034;&#35789;</h3>${d.terms.map(([name,query])=>`<div class="term-item"><div class="term-main"><small>${name}</small><span>${query}</span></div><button class="icon-btn" data-copy="${esc(query)}" aria-label="${U.copyName}: ${esc(query)}" title="${U.copyName}">${icon('copy')}</button><a class="icon-btn" href="${esc(mapUrl(query))}" target="_blank" rel="noopener noreferrer" aria-label="${U.hotelMap}: ${esc(query)}" title="${U.hotelMap}">${icon('external')}</a></div>`).join('')}<p class="small-note">${U.external}</p></section>`;}
-function dayHotel(d){const h=hotel(d.hotel);if(!h)return `<section class="panel"><h3>${icon('plane')}${U.inbound}</h3><p class="day-hotel-title">HND T3 &rarr; HKG</p><div class="day-hotel-en">JL029 &middot; 09:55 &rarr; 13:30</div><p class="day-hotel-access">${U.retire}</p></section>`;return `<section class="panel"><h3>${icon('bed')}${U.stayTonight}</h3><div class="day-hotel-title">${h.name}</div><div class="day-hotel-en">${h.official}</div><p class="day-hotel-access">${h.access}</p><div style="display:flex;gap:5px;flex-wrap:wrap"><a class="btn btn-outline" href="${esc(mapUrl(h.jp+' '+h.address))}" target="_blank" rel="noopener noreferrer">${icon('pin')}${U.hotelMap}</a><button class="btn btn-ghost" data-view="hotels">${U.fullInfo}</button></div></section>`;}
-function dayView(){const d=getDay(state.day),part=activeDayData(d),choice=D.specialChoices[d.key];return `${titleBlock(U.daysTitle,U.daysSubtitle,'DAY BY DAY')}${datesMarkup()}${d.num===9||d.num===10?planToggle(true):''}<div class="day-heading"><div class="day-heading-top"><span class="day-number">DAY ${String(d.num).padStart(2,'0')} / 11</span><span class="tag tag-green">${d.date} &middot; ${d.week}</span><span class="tag">${d.region}</span>${d.num===9||d.num===10?`<span class="tag tag-peach">${state.plan==='A'?U.planA:U.planB}</span>`:''}</div><h2>${d.title}</h2><div class="route-box">${icon('route')}<span>${activeRoute(d)}</span></div></div>${choice?`<div class="choice-card"><h3>${U.choice}</h3><div class="segmented" role="group" aria-label="${U.choice}">${choice.labels.map((l,i)=>`<button data-choice="${d.key}" data-choice-index="${i}" class="${state.choices[d.key]===i?'active':''}" aria-pressed="${state.choices[d.key]===i}">${l}</button>`).join('')}</div><p class="choice-hint">${choice.hints[state.choices[d.key]]} ${U.choiceNote}</p></div>`:''}<div class="day-columns"><div>${part.timeline.length?`<section class="timeline-card"><div class="timeline-head"><h3>${U.schedule}</h3><small>${U.suggested}</small></div>${part.timeline.map(r=>`<div class="timeline-row"><div class="timeline-time">${r.time}</div><div class="timeline-text">${r.text}</div></div>`).join('')}</section>`:''}<details class="details-box" open><summary>${U.details}${icon('chevron')}</summary><div class="prose">${part.html}</div></details><div class="day-end"><button class="btn btn-outline" data-day="${Math.max(1,d.num-1)}" ${d.num===1?'disabled':''}>${icon('arrow-left')}${U.prevDay}</button><button class="finish-day ${state.done[d.num]?'checked':''}" data-action="done-day">${icon(state.done[d.num]?'check-circle':'circle')}${state.done[d.num]?U.doneDayYes:U.doneDay}</button><button class="btn btn-dark" data-day="${Math.min(11,d.num+1)}" ${d.num===11?'disabled':''}>${U.nextDay}${icon('arrow')}</button></div></div><aside class="day-side"><div class="focus-box"><h4>${icon('alert')}${U.safe}</h4>${d.focus}</div>${dayHotel(d)}${termsMarkup(d)}<section class="panel notes-panel"><h3>${icon('edit')}${U.dayNote}</h3><textarea class="notes-box" id="day-note" data-note-key="${noteKey(d)}" placeholder="${U.notePlaceholder}" aria-label="${U.dayNote}">${esc(state.notes[noteKey(d)]||'')}</textarea><p class="small-note" id="note-status">${U.localOnly}</p></section></aside></div>`;}
-function hotelsView(){return `${titleBlock(U.hotelsTitle,U.hotelsSubtitle,'STAY A LITTLE LONGER')}<div class="hotel-grid">${D.hotels.map(h=>`<article class="hotel-card ${h.id}"><div class="hotel-banner"><div class="eyebrow">${h.region} &nbsp; / &nbsp; ${h.dates}</div><span class="hotel-nights">${h.nights} &#26202;</span><h2>${h.name}</h2><p>${h.official}</p></div><div class="hotel-body"><div class="hotel-info-row">${icon('pin')}<span>${h.address}</span></div><div class="hotel-info-row">${icon('clock')}<span>${h.arrival}</span></div><div class="hotel-info-row">${icon('train')}<span>${h.access}</span></div><p class="hotel-tip">${h.tip}</p><div class="hotel-actions"><a class="btn btn-dark" href="${esc(mapUrl(h.jp+' '+h.address))}" target="_blank" rel="noopener noreferrer">${icon('pin')}${U.hotelMap}</a><button class="btn btn-outline" data-copy="${esc(h.jp)}">${icon('copy')}${U.copyName}</button><a class="btn btn-ghost" href="tel:${h.phone}">${icon('phone')}${h.phone}</a></div><div class="small-note"><a href="${esc(D.refs[h.ref])}" target="_blank" rel="noopener noreferrer">&#37202;&#24215;&#23448;&#26041;&#20449;&#24687; ${icon('external')}</a></div></div></article>`).join('')}</div><details class="details-box"><summary>${U.hotelSource}${icon('chevron')}</summary><div class="prose">${D.chapters.hotels.hotelHtml}</div></details><div class="source-notice">${U.hotelOrder} ${U.sourceNotice}</div>`;}
-function transportView(){return `${titleBlock(U.transportTitle,U.transportSubtitle,'ON THE WAY')}<section class="transport-card"><h2 class="chapter-title">${icon('ticket')}${U.tickets}</h2><div class="prose">${D.chapters.tickets.html}</div></section><details class="details-box"><summary>${U.izuDirection}${icon('chevron')}</summary><div class="prose">${D.chapters.izu.html}</div></details><section class="transport-card"><h2 class="chapter-title">${icon('coin')}${U.budget}</h2><div class="prose">${D.chapters.budget.html}</div></section><section class="transport-card"><h2 class="chapter-title">${icon('edit')}${U.transitMemo}</h2><p class="muted" style="font-size:12px">${U.transitMemoSub}</p><div class="memo-list">${D.transit.map(t=>`<div class="memo-card"><div class="memo-date">${t.date}</div><h4>${t.route}</h4><p>${t.current}<br>${t.hint}</p><textarea data-transit-key="${t.id}" placeholder="${U.transitPlaceholder}" aria-label="${esc(t.date+' '+t.route)}">${esc(state.transit[t.id]||'')}</textarea></div>`).join('')}</div><p class="small-note">${U.localOnly}</p></section><details class="details-box"><summary>${U.onTheRoad}${icon('chevron')}</summary><div class="prose">${D.chapters.road.html}</div></details>`;}
+function termsMarkup(d){return `<section class="panel"><h3>${icon('pin')}&#26085;&#25991;&#26816;&#32034;&#35789;</h3>${d.terms.map(([name,query])=>{
+ const destination=prosePlaces.queries.get(name==='七滝回程站'?name:query)||query+' 日本';
+ const href=esc(mapUrl(destination)),label=esc('在 Google Maps 中打开：'+name);
+ return `<div class="term-item"><div class="term-main"><small><a class="place-link" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="${label}">${esc(name)}</a></small><span><a class="place-link" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="${label}">${esc(query)}</a></span></div><button class="icon-btn" data-copy="${esc(query)}" aria-label="${U.copyName}: ${esc(query)}" title="${U.copyName}">${icon('copy')}</button><a class="icon-btn" href="${href}" target="_blank" rel="noopener noreferrer" aria-label="${label}" title="${label}">${icon('external')}</a></div>`;
+ }).join('')}<p class="small-note">${U.external}</p></section>`;}
+function dayHotel(d){const h=hotel(d.hotel);if(!h)return `<section class="panel"><h3>${icon('plane')}${U.inbound}</h3><p class="day-hotel-title">HND T3 &rarr; HKG</p><div class="day-hotel-en">JL029 &middot; 09:55 &rarr; 13:30</div><p class="day-hotel-access">${U.retire}</p></section>`;return `<section class="panel"><h3>${icon('bed')}${U.stayTonight}</h3><div class="day-hotel-title">${h.name}</div><div class="day-hotel-en">${h.official}</div><p class="day-hotel-access">${h.access}</p><div style="display:flex;gap:5px;flex-wrap:wrap"><a class="btn btn-outline" href="${esc(mapUrl(h.jp+' '+h.address))}" target="_blank" rel="noopener noreferrer">${icon('pin')}${U.hotelMap}</a>${hotelBookingButton(h)}<button class="btn btn-ghost" data-view="hotels">${U.fullInfo}</button></div></section>`;}
+function dayView(){const d=getDay(state.day),part=activeDayData(d),choice=D.specialChoices[d.key];return `${titleBlock(U.daysTitle,U.daysSubtitle,'DAY BY DAY')}${datesMarkup()}${d.num===9||d.num===10?planToggle(true):''}<div class="day-heading"><div class="day-heading-top"><span class="day-number">DAY ${String(d.num).padStart(2,'0')} / 11</span><span class="tag tag-green">${d.date} &middot; ${d.week}</span><span class="tag">${d.region}</span>${d.num===9||d.num===10?`<span class="tag tag-peach">${state.plan==='A'?U.planA:U.planB}</span>`:''}</div><h2>${d.title}</h2><div class="route-box">${icon('route')}<span>${activeRoute(d)}</span></div></div>${choice?`<div class="choice-card"><h3>${U.choice}</h3><div class="segmented" role="group" aria-label="${U.choice}">${choice.labels.map((l,i)=>`<button data-choice="${d.key}" data-choice-index="${i}" class="${state.choices[d.key]===i?'active':''}" aria-pressed="${state.choices[d.key]===i}">${l}</button>`).join('')}</div><p class="choice-hint">${choice.hints[state.choices[d.key]]} ${U.choiceNote}</p></div>`:''}<div class="day-columns"><div>${bookingPanel(dayBookingEntries(d))}${part.timeline.length?`<section class="timeline-card"><div class="timeline-head"><h3>${U.schedule}</h3><small>${U.suggested}</small></div>${part.timeline.map(r=>`<div class="timeline-row"><div class="timeline-time">${r.time}</div><div class="timeline-text">${r.text}</div></div>`).join('')}</section>`:''}<details class="details-box" open><summary>${U.details}${icon('chevron')}</summary><div class="prose">${part.html}</div></details><div class="day-end"><button class="btn btn-outline" data-day="${Math.max(1,d.num-1)}" ${d.num===1?'disabled':''}>${icon('arrow-left')}${U.prevDay}</button><button class="finish-day ${state.done[d.num]?'checked':''}" data-action="done-day">${icon(state.done[d.num]?'check-circle':'circle')}${state.done[d.num]?U.doneDayYes:U.doneDay}</button><button class="btn btn-dark" data-day="${Math.min(11,d.num+1)}" ${d.num===11?'disabled':''}>${U.nextDay}${icon('arrow')}</button></div></div><aside class="day-side"><div class="focus-box"><h4>${icon('alert')}${U.safe}</h4>${d.focus}</div>${dayHotel(d)}${termsMarkup(d)}<section class="panel notes-panel"><h3>${icon('edit')}${U.dayNote}</h3><textarea class="notes-box" id="day-note" data-note-key="${noteKey(d)}" placeholder="${U.notePlaceholder}" aria-label="${U.dayNote}">${esc(state.notes[noteKey(d)]||'')}</textarea><p class="small-note" id="note-status">${U.localOnly}</p></section></aside></div>`;}
+function hotelsView(){return `${titleBlock(U.hotelsTitle,U.hotelsSubtitle,'STAY A LITTLE LONGER')}<div class="hotel-grid">${D.hotels.map(h=>`<article class="hotel-card ${h.id}"><div class="hotel-banner"><div class="eyebrow">${h.region} &nbsp; / &nbsp; ${h.dates}</div><span class="hotel-nights">${h.nights} &#26202;</span><h2>${h.name}</h2><p>${h.official}</p></div><div class="hotel-body"><div class="hotel-info-row">${icon('pin')}<span>${h.address}</span></div><div class="hotel-info-row">${icon('clock')}<span>${h.arrival}</span></div><div class="hotel-info-row">${icon('train')}<span>${h.access}</span></div><p class="hotel-tip">${h.tip}</p><div class="hotel-actions"><a class="btn btn-dark" href="${esc(mapUrl(h.jp+' '+h.address))}" target="_blank" rel="noopener noreferrer">${icon('pin')}${U.hotelMap}</a>${hotelBookingButton(h)}<button class="btn btn-outline" data-copy="${esc(h.jp)}">${icon('copy')}${U.copyName}</button><a class="btn btn-ghost" href="tel:${h.phone}">${icon('phone')}${h.phone}</a></div><div class="small-note"><a href="${esc(D.refs[h.ref])}" target="_blank" rel="noopener noreferrer">&#37202;&#24215;&#23448;&#26041;&#20449;&#24687; ${icon('external')}</a></div></div></article>`).join('')}</div><details class="details-box"><summary>${U.hotelSource}${icon('chevron')}</summary><div class="prose">${D.chapters.hotels.hotelHtml}</div></details><div class="source-notice">${U.hotelOrder} ${U.sourceNotice}</div>`;}
+function transportView(){return `${titleBlock(U.transportTitle,U.transportSubtitle,'ON THE WAY')}${bookingPanel(transportBookingIds,'交通票券购买','先查看适用区间，再选择乘车日期与票种。')}<section class="transport-card"><h2 class="chapter-title">${icon('ticket')}${U.tickets}</h2><div class="prose">${D.chapters.tickets.html}</div></section><details class="details-box"><summary>${U.izuDirection}${icon('chevron')}</summary><div class="prose">${D.chapters.izu.html}</div></details><section class="transport-card"><h2 class="chapter-title">${icon('coin')}${U.budget}</h2><div class="prose">${D.chapters.budget.html}</div></section><section class="transport-card"><h2 class="chapter-title">${icon('edit')}${U.transitMemo}</h2><p class="muted" style="font-size:12px">${U.transitMemoSub}</p><div class="memo-list">${D.transit.map(t=>`<div class="memo-card"><div class="memo-date">${t.date}</div><h4>${t.route}</h4><p>${t.current}<br>${t.hint}</p><textarea data-transit-key="${t.id}" placeholder="${U.transitPlaceholder}" aria-label="${esc(t.date+' '+t.route)}">${esc(state.transit[t.id]||'')}</textarea></div>`).join('')}</div><p class="small-note">${U.localOnly}</p></section><details class="details-box"><summary>${U.onTheRoad}${icon('chevron')}</summary><div class="prose">${D.chapters.road.html}</div></details>`;}
 function checklistView(){const groups=[...new Set(D.checks.map(c=>c.group))];return `${titleBlock(U.checkTitle,U.checkSubtitle,'BEFORE YOU GO')}<section class="check-summary"><div><h2>${U.progressLabel}</h2><p>${U.localOnly}</p><div class="progress-track"><div class="progress-fill" data-check-progress style="width:${checkedCount()/D.checks.length*100}%"></div></div></div><div class="check-summary-count"><span data-check-count>${checkedCount()}</span><small>/ ${D.checks.length}</small></div></section>${groups.map(g=>`<section class="check-group"><h2>${g}</h2>${D.checks.filter(c=>c.group===g).map(c=>`<label class="check-item ${state.checks[c.id]?'checked':''}"><input type="checkbox" data-check-id="${c.id}" ${state.checks[c.id]?'checked':''}><span class="prose">${c.html}</span></label>`).join('')}</section>`).join('')}<section class="backup-panel"><div class="backup-actions">${btn(U.backup,'backup','btn-dark','download')}${btn(U.restore,'restore','btn-outline','upload')}${btn(U.exportNotes,'notes','btn-outline','edit')}${btn(U.reset,'reset','btn-ghost','reset')}</div><p>${U.backupNote}</p></section><p class="source-notice">${U.sourceNotice}</p>`;}
-function sourceView(){return `${titleBlock(U.sourceTitle,U.sourceSubtitle,'THE COMPLETE ITINERARY')}<div class="source-layout"><aside class="toc-box"><h3>${U.toc}</h3><nav>${D.sections.map(s=>`<button class="toc-link" data-source-anchor="${s.id}">${s.title}</button>`).join('')}</nav><button class="btn btn-outline" data-action="download-md" style="margin-top:14px;font-size:10px">${icon('download')}${U.download}</button></aside><article class="source-document"><p class="provenance">${U.sourceLabel}<br>${esc(D.sourceName)}</p><div class="prose">${D.introHtml}</div>${D.sections.map(s=>`<section class="source-section prose" id="${s.id}"><h2>${s.title}</h2>${s.html}</section>`).join('')}</article></div>`;}
+function sourceView(){return `${titleBlock(U.sourceTitle,U.sourceSubtitle,'THE COMPLETE ITINERARY')}${bookingDirectory()}<div class="source-layout"><aside class="toc-box"><h3>${U.toc}</h3><nav>${D.sections.map(s=>`<button class="toc-link" data-source-anchor="${s.id}">${s.title}</button>`).join('')}</nav><button class="btn btn-outline" data-action="download-md" style="margin-top:14px;font-size:10px">${icon('download')}${U.download}</button></aside><article class="source-document"><p class="provenance">${U.sourceLabel}<br>${esc(D.sourceName)}</p><div class="prose">${D.introHtml}</div>${D.sections.map(s=>`<section class="source-section prose" id="${s.id}"><h2>${s.title}</h2>${s.html}</section>`).join('')}</article></div>`;}
 function updateProgress(){const n=checkedCount();document.querySelectorAll('[data-check-count]').forEach(e=>e.textContent=n);document.querySelectorAll('[data-check-progress]').forEach(e=>e.style.width=(n/D.checks.length*100)+'%');}
 function render(){
  const funcs={overview,days:dayView,hotels:hotelsView,transport:transportView,checklist:checklistView,source:sourceView};
  const content=document.getElementById('content');content.innerHTML=(!storageWorks?`<div class="storage-warning">${U.notSaved}</div>`:'')+funcs[state.view]();
+ linkPlaces(content);
+ if(['days','hotels','transport','source'].includes(state.view))content.querySelector('.view-intro').insertAdjacentHTML('afterend',`<p class="maps-hint">${icon('pin')}带下划线的地点可点击，在 Google Maps 中打开。</p>`);
  content.classList.remove('view-enter');void content.offsetWidth;content.classList.add('view-enter');
  document.querySelectorAll('.nav-item').forEach(e=>{const active=e.dataset.view===state.view;e.classList.toggle('active',active);if(active)e.setAttribute('aria-current','page');else e.removeAttribute('aria-current');});
  const label=U[navs.find(n=>n[0]===state.view)[1]];document.getElementById('crumb').textContent=label;document.title=(state.view==='days'?getDay(state.day).date+' / ':'')+label+' | '+U.brand;
